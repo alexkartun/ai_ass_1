@@ -1,7 +1,7 @@
 import sys
 
-from BFS import BFS
-from Problem import Problem
+
+from Searcher import BFS, AStar, IDS
 from State import State
 
 
@@ -15,9 +15,13 @@ with open(input_file_name) as input_file:
 root = State(board_size, init_state)
 goal = State(board_size, '1-2-3-4-5-6-7-8-0')
 
-if search_algorithm == '2':
-    action_path, developed_nodes = BFS().search(Problem(root, goal))
-print developed_nodes
-for v in action_path:
-    print v
-
+with open('output.txt', 'w') as output_file:
+    if search_algorithm == '1':
+        action_path, developed_nodes, depth = IDS().search(root, goal, 10)
+        output_file.write(''.join(action_path) + ' ' + str(developed_nodes) + ' ' + str(depth))
+    elif search_algorithm == '2':
+        action_path, developed_nodes = BFS().search(root, goal)
+        output_file.write(''.join(action_path) + ' ' + str(developed_nodes) + ' ' + str(0))
+    elif search_algorithm == '3':
+        action_path, developed_nodes, cost = AStar().search(root, goal)
+        output_file.write(''.join(action_path) + ' ' + str(developed_nodes) + ' ' + str(cost))
