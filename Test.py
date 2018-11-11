@@ -4,7 +4,7 @@ import sys
 from Searcher import BFS, AStar, IDS
 from State import State
 
-
+# parse data from file
 input_file_name = sys.argv[1]
 with open(input_file_name) as input_file:
     lines = input_file.readlines()
@@ -12,9 +12,11 @@ with open(input_file_name) as input_file:
     board_size = int(lines[1].strip())
     init_state = lines[2].strip()
 
+# create root and goal state of 'X puzzle'
 root = State(board_size, init_state)
 goal = State(board_size, '1-2-3-4-5-6-7-8-0')
 
+# activate search algorithm depends on user's input.
 with open('output.txt', 'w') as output_file:
     if search_algorithm == '1':
         action_path, developed_nodes, depth = IDS().search(root, goal, 10)
