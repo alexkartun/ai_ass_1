@@ -5,6 +5,11 @@ from State import State
 
 
 def build_goal_state(size):
+    """
+    Creating goal state representation by size
+    :param size: Size of the board
+    :return: String representation of goal state
+    """
     goal_state = list()
     for i in range(1, size * size):
         goal_state.append(str(i))
