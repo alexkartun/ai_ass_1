@@ -119,18 +119,21 @@ class AStar(Searcher):
 
 
 class IDS(Searcher):
-    def search(self, root, goal, max_depth):
+    def search(self, root, goal):
         # Init
+        depth = 0
         self.meta[root] = (None, None)
         # Iterate over all depths from 0 to max_depth
-        for depth in range(max_depth):
-            # Calling DFS search util that will search not beyond the depth threshold.
-            status, action_path = self.search_util(root, goal, depth)
-            # If DFS found path to goal node return the action path
-            if status:
-                return action_path, self.developed_nodes, depth
-            # Reset the developed nodes indicator for next iteration
-            self.developed_nodes = 0
+        while True:
+                # Calling DFS search util that will search not beyond the depth threshold.
+                status, action_path = self.search_util(root, goal, depth)
+                print depth
+                # If DFS found path to goal node return the action path
+                if status:
+                    return action_path, self.developed_nodes, depth
+                # Reset the developed nodes indicator for next iteration
+                depth += 1
+                self.developed_nodes = 0
 
     def search_util(self, root, goal, depth):
         # Increase indicator of developed nodes

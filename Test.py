@@ -32,7 +32,7 @@ goal = State(board_size, build_goal_state(board_size))
 # activate search algorithm depends on user's input.
 with open('output.txt', 'w') as output_file:
     if search_algorithm == '1':
-        action_path, developed_nodes, depth = IDS().search(root, goal, 5000)
+        action_path, developed_nodes, depth = IDS().search(root, goal)
         output_file.write(''.join(action_path) + ' ' + str(developed_nodes) + ' ' + str(depth))
     elif search_algorithm == '2':
         action_path, developed_nodes = BFS().search(root, goal)
