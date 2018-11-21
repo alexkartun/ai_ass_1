@@ -1,5 +1,5 @@
 class State(object):
-    def __init__(self, board_size, state):
+    def __init__(self, board_size, state, action_operator=None):
         self.board_size = board_size
         self.state = state
         # Cost of each move
@@ -8,9 +8,13 @@ class State(object):
         self.h = 0
         # Path cost from root node to this node
         self.g = 0
+        self.action_operator = action_operator
 
     def get_cost(self):
         return self.cost
+
+    def get_action_operator(self):
+        return self.action_operator
 
     def get_state(self):
         return self.state
@@ -44,19 +48,19 @@ class State(object):
         # Check potential movement up
         if zero_row != self.board_size - 1:
             new_state = self.create_new_state((zero_row, zero_col), (zero_row + 1, zero_col), list(tokens))
-            successors.append((State(self.board_size, new_state), 'U'))
+            successors.append(State(self.board_size, new_state, 'U'))
         # Check potential movement down
         if zero_row != 0:
             new_state = self.create_new_state((zero_row, zero_col), (zero_row - 1, zero_col), list(tokens))
-            successors.append((State(self.board_size, new_state), 'D'))
+            successors.append(State(self.board_size, new_state, 'D'))
         # Check potential movement left
         if zero_col != self.board_size - 1:
             new_state = self.create_new_state((zero_row, zero_col), (zero_row, zero_col + 1), list(tokens))
-            successors.append((State(self.board_size, new_state), 'L'))
+            successors.append(State(self.board_size, new_state, 'L'))
         # Check potential movement right
         if zero_col != 0:
             new_state = self.create_new_state((zero_row, zero_col), (zero_row, zero_col - 1), list(tokens))
-            successors.append((State(self.board_size, new_state), 'R'))
+            successors.append(State(self.board_size, new_state, 'R'))
         return successors
 
     def create_new_state(self, zero_place, swap_place, tokens):
@@ -95,19 +99,39 @@ class State(object):
                 h += abs(current_row - target_row) + abs(current_col - target_col)
         return h
 
+    def evaluate_operator(self):
+        if self.action_operator == 'U':
+            return 4
+        elif self.action_operator == 'D':
+            return 3
+        elif self.action_operator == 'L':
+            return 2
+        else:
+            return 1
+
     def __cmp__(self, other):
         """
-        Comparing function of nodes by their heuristic + cost to this node
-        Priority queue of nodes use this function to decide higher priority of two nodes
-        :param other: Other node to compare
-        :return: Which element is bigger
+        Comparator overloading. Deciding which state is with higher priority.
+        Priority queue of states use this operator to decide which state is has higher priority.
+        :param other: Other state to compare
+        :return: Which element is with higher priority.
         """
-        return cmp(self.g + self.h, other.g + other.h)
+        # checking h + g value
+        res = cmp(self.g + self.h, other.g + other.h)
+        if res == 0:
+            # h + g values are same so decide by their depth.
+            res = cmp(self.g, other.g)
+            # their depths are equal.
+            if res == 0:
+                # decide by operator value
+                return cmp(self.evaluate_operator(), other.evaluate_operator())
+        # Otherwise first or second if was not executed so return the res value.
+        return res
 
-    def is_equal(self, s):
+    def __eq__(self, other):
         """
-        Check node's string representation of state to other(s) node's state
-        :param s: Node to check with
-        :return: True if equal, False otherwise
+        Operator == overloading. Check if current state equals to other state.
+        :param other: Other state.
+        :return: True = equal, False - otherwise.
         """
-        return self.state == s.state
+        return self.state == other.state
