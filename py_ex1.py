@@ -260,16 +260,6 @@ class State(object):
                 h += abs(current_row - target_row) + abs(current_col - target_col)
         return h
 
-    def evaluate_operator(self):
-        if self.action_operator == 'U':
-            return 4
-        elif self.action_operator == 'D':
-            return 3
-        elif self.action_operator == 'L':
-            return 2
-        else:
-            return 1
-
     def __cmp__(self, other):
         """
         Comparator overloading. Deciding which state is with higher priority.
