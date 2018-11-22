@@ -75,6 +75,7 @@ class AStar(Searcher):
         :return: The path from init to goal.
         """
         # Init
+        timestamp = 0
         self.meta[root] = (None, None)
         heapq.heappush(self.open_set, root)
         # For each node on the current level expand and process, if no children (leaf) then unwind.
@@ -89,6 +90,8 @@ class AStar(Searcher):
             for child in subtree_root.get_successors():
                 child.set_g(subtree_root.get_g() + subtree_root.get_cost())
                 child.set_h(child.heuristic_function())
+                timestamp += 1
+                child.set_timestamp(timestamp)
                 self.meta[child] = (subtree_root, child.get_action_operator())
                 heapq.heappush(self.open_set, child)
 
@@ -162,6 +165,8 @@ class State(object):
         self.g = 0
         # operator that bring to this state
         self.action_operator = action_operator
+        # timestamp of node in creation
+        self.timestamp = 0
 
     def get_cost(self):
         return self.cost
@@ -186,6 +191,9 @@ class State(object):
 
     def set_g(self, g):
         self.g = g
+
+    def set_timestamp(self, timestamp):
+        self.timestamp = timestamp
 
     def get_successors(self):
         """
@@ -272,13 +280,9 @@ class State(object):
         # checking h + g value
         res = cmp(self.g + self.h, other.g + other.h)
         if res == 0:
-            # h + g values are same so decide by their depth.
-            res = cmp(self.g, other.g)
-            # their depths are equal.
-            if res == 0:
-                # decide by operator value
-                return cmp(self.evaluate_operator(), other.evaluate_operator())
-        # Otherwise first or second if was not executed so return the res value.
+            # h + g values are same so decide by their timestamp.
+            return cmp(self.timestamp, other.timestamp)
+        # Otherwise,
         return res
 
     def __eq__(self, other):
