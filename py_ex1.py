@@ -160,6 +160,7 @@ class State(object):
         self.h = 0
         # Path cost from root node to this node
         self.g = 0
+        # operator that bring to this state
         self.action_operator = action_operator
 
     def get_cost(self):
