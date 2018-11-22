@@ -114,7 +114,7 @@ class IDS(Searcher):
         # Iterate over all depths from 0 to max_depth
         while True:
                 # Calling DFS search util that will search not beyond the depth threshold.
-                status, action_path, remaining = self.dfs_by_depth(root, goal, depth)
+                status, action_path = self.dfs_by_depth(root, goal, depth)
                 # If DFS found path to goal node return the action path
                 if status:
                     self.algorithm_cost = depth
