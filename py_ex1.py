@@ -4,26 +4,25 @@ import heapq
 
 class Searcher(object):
     """
-    Abstract class 'Searcher'. Contains open_set, meta and developed_nodes indicator
+    Abstract class 'Searcher'. Contains open_set and developed_nodes indicator
     """
     def __init__(self):
-        self.open_set = list()
-        # map node/state to tuple of (parent node/state, operation to this state)
-        self.meta = dict()
+        self.open_set = []
         self.developed_nodes = 0
         self.algorithm_cost = 0
 
-    def construct_action_path(self, state):
+    @staticmethod
+    def construct_action_path(state):
         """
-        Produce a backtrace of the actions taken to find the goal node, using the
-        recorded meta dictionary
+        Produce a backtrace of the actions taken to find the goal node
         :param state: State/node to start backtracking from
         :return: Action path
         """
-        action_list = list()
-        # Continue until you reach root meta data (i.e. (None, None))
-        while self.meta[state][0] is not None:
-            state, action = self.meta[state]
+        action_list = []
+        # Continue until you reach root that his parent is None
+        while state.get_parent() is not None:
+            action = state.get_action_operator()
+            state = state.get_parent()
             action_list.append(action)
 
         action_list.reverse()
@@ -41,8 +40,6 @@ class BFS(Searcher):
         :param goal: Goal state.
         :return: The path from init to goal.
         """
-        # init
-        self.meta[root] = (None, None)
         self.open_set.append(root)
         # For each node on the current level expand and process, if no children (leaf) then unwind.
         while self.open_set:
@@ -53,7 +50,6 @@ class BFS(Searcher):
                 return self.construct_action_path(subtree_root), self.developed_nodes, self.algorithm_cost
             # For each child of the current tree process
             for child in subtree_root.get_successors():
-                self.meta[child] = (subtree_root, child.get_action_operator())
                 self.open_set.append(child)
 
 
@@ -65,6 +61,7 @@ class AStar(Searcher):
         Searcher.__init__(self)
         # Create priority queue
         heapq.heapify(self.open_set)
+        self.timestamp = 0
 
     def search(self, root, goal):
         """
@@ -74,9 +71,6 @@ class AStar(Searcher):
         :param goal: Goal state.
         :return: The path from init to goal.
         """
-        # Init
-        timestamp = 0
-        self.meta[root] = (None, None)
         heapq.heappush(self.open_set, root)
         # For each node on the current level expand and process, if no children (leaf) then unwind.
         while self.open_set:
@@ -90,9 +84,8 @@ class AStar(Searcher):
             for child in subtree_root.get_successors():
                 child.set_g(subtree_root.get_g() + subtree_root.get_cost())
                 child.set_h(child.heuristic_function())
-                timestamp += 1
-                child.set_timestamp(timestamp)
-                self.meta[child] = (subtree_root, child.get_action_operator())
+                self.timestamp += 1
+                child.set_timestamp(self.timestamp)
                 heapq.heappush(self.open_set, child)
 
 
@@ -112,7 +105,6 @@ class IDS(Searcher):
         """
         # Init
         depth = 0
-        self.meta[root] = (None, None)
         # Iterate over all depths from 0 to max_depth
         while True:
                 # Calling DFS search util that will search not beyond the depth threshold.
@@ -143,7 +135,6 @@ class IDS(Searcher):
             return False, None
         # For each child of the current tree process
         for child in root.get_successors():
-            self.meta[child] = (root, child.get_action_operator())
             # Call recursively to search util with new subtree to explore with lower depth
             status, action_path = self.dfs_by_depth(child, goal, depth - 1)
             # Is processed subtree found path, so return it
@@ -154,7 +145,7 @@ class IDS(Searcher):
 
 
 class State(object):
-    def __init__(self, b_size, state, action_operator=None):
+    def __init__(self, b_size, state, parent=None, action_operator=None):
         self.board_size = b_size
         self.state = state
         # Cost of each move
@@ -163,16 +154,21 @@ class State(object):
         self.h = 0
         # Path cost from root node to this node
         self.g = 0
-        # operator that bring to this state
-        self.action_operator = action_operator
         # timestamp of node in creation
         self.timestamp = 0
+        # parent of current state
+        self.parent = parent
+        # operator that bring to this state
+        self.action_operator = action_operator
 
     def get_cost(self):
         return self.cost
 
     def get_action_operator(self):
         return self.action_operator
+
+    def get_parent(self):
+        return self.parent
 
     def get_state(self):
         return self.state
@@ -200,28 +196,28 @@ class State(object):
         Get list of all potential states from this state
         :return: List of states
         """
-        successors = list()
+        successors = []
         # Get zero row and col in this state
         tokens = self.state.split('-')
         zero_index = tokens.index('0')
-        zero_row = zero_index / self.board_size
+        zero_row = int(zero_index / self.board_size)
         zero_col = zero_index % self.board_size
         # Check potential movement up
         if zero_row != self.board_size - 1:
             new_state = self.create_new_state((zero_row, zero_col), (zero_row + 1, zero_col), list(tokens))
-            successors.append(State(self.board_size, new_state, 'U'))
+            successors.append(State(self.board_size, new_state, self, 'U'))
         # Check potential movement down
         if zero_row != 0:
             new_state = self.create_new_state((zero_row, zero_col), (zero_row - 1, zero_col), list(tokens))
-            successors.append(State(self.board_size, new_state, 'D'))
+            successors.append(State(self.board_size, new_state, self, 'D'))
         # Check potential movement left
         if zero_col != self.board_size - 1:
             new_state = self.create_new_state((zero_row, zero_col), (zero_row, zero_col + 1), list(tokens))
-            successors.append(State(self.board_size, new_state, 'L'))
+            successors.append(State(self.board_size, new_state, self, 'L'))
         # Check potential movement right
         if zero_col != 0:
             new_state = self.create_new_state((zero_row, zero_col), (zero_row, zero_col - 1), list(tokens))
-            successors.append(State(self.board_size, new_state, 'R'))
+            successors.append(State(self.board_size, new_state, self, 'R'))
         return successors
 
     def create_new_state(self, zero_place, swap_place, tokens):
@@ -251,29 +247,28 @@ class State(object):
             if not s == '0':
                 value = int(s)
                 # Calculate current row and col of the value
-                current_row = ind / self.board_size
+                current_row = int(ind / self.board_size)
                 current_col = ind % self.board_size
                 # Calculate target row and col of the value. Meaning the correct place in goal solution
-                target_row = (value - 1) / self.board_size
+                target_row = int((value - 1) / self.board_size)
                 target_col = (value - 1) % self.board_size
                 # Add the differences between current place to target place
                 h += abs(current_row - target_row) + abs(current_col - target_col)
         return h
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         """
-        Comparator overloading. Deciding which state is with higher priority.
+        Operator < overloading. Deciding which state is with higher priority.
         Priority queue of states use this operator to decide which state is has higher priority.
         :param other: Other state to compare
         :return: Which element is with higher priority.
         """
         # checking h + g value
-        res = cmp(self.g + self.h, other.g + other.h)
-        if res == 0:
+        if (self.g + self.h) == (other.g + other.h):
             # h + g values are same so decide by their timestamp.
-            return cmp(self.timestamp, other.timestamp)
+            return self.timestamp < other.timestamp
         # Otherwise,
-        return res
+        return (self.g + self.h) < (other.g + other.h)
 
     def __eq__(self, other):
         """
@@ -290,8 +285,8 @@ def build_goal_state(size):
     :param size: Size of the board
     :return: String representation of goal state
     """
-    goal_s = [str(i) for i in range(1, size * size)]
-    goal_s.append('0')
+    length = size ** 2
+    goal_s = [str(i % length) for i in range(1, length + 1)]
     return '-'.join(goal_s)
 
 
